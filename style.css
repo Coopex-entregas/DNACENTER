@@ -1,0 +1,70 @@
+/* style.css */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #eef4fc;
+  margin: 0;
+  padding: 0;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  background-color: #004aad;
+  color: white;
+  padding: 10px 20px;
+}
+
+.logo {
+  height: 50px;
+  margin-right: 15px;
+}
+
+h1 {
+  font-size: 1.6rem;
+}
+
+main {
+  padding: 20px;
+}
+
+section {
+  margin-bottom: 30px;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+input, select, button {
+  padding: 10px;
+  margin: 5px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  font-size: 1rem;
+  width: 100%;
+  max-width: 300px;
+}
+
+button {
+  background-color: #004aad;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background-color: #00307a;
+}
+
+.hidden {
+  display: none;
+}
+
+#listaMotoboys > div {
+  margin: 10px 0;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #f5faff;
+}

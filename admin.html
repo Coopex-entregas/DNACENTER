@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Painel de Temperatura DNA Center</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body { font-family: Arial; background: #eef4ff; padding: 20px; }
+    h2 { text-align: center; color: #0033aa; }
+    .filtros, .registros { margin-top: 30px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { padding: 8px; border: 1px solid #ccc; text-align: center; font-size: 14px; }
+    th { background-color: #d3e3ff; }
+    label { font-weight: bold; }
+    input, select { margin: 5px 10px; padding: 5px; }
+    button { padding: 6px 12px; margin-left: 10px; }
+    .media { font-weight: bold; text-align: right; margin-top: 15px; font-size: 15px; }
+  </style>
+</head>
+<body>
+  <h2>Painel de Temperatura DNA Center</h2>
+
+  <div class="filtros">
+    <label>Motoboy:</label>
+    <select id="filtroMotoboy"></select>
+    <label>Data Início:</label>
+    <input type="date" id="dataInicio">
+    <label>Data Fim:</label>
+    <input type="date" id="dataFim">
+    <button onclick="filtrarRegistros()">Filtrar</button>
+    <button onclick="exportarExcel()">Exportar Excel</button>
+  </div>
+
+  <div class="registros">
+    <table>
+      <thead>
+        <tr>
+          <th>Motoboy</th>
+          <th>Data</th>
+          <th>Hora Envio</th>
+          <th>Temp Envio</th>
+          <th>Local Envio</th>
+          <th>Resp. Envio</th>
+          <th>Hora Receb.</th>
+          <th>Temp Receb.</th>
+          <th>Resp. Receb.</th>
+          <th>Local Receb.</th>
+          <th>Duração</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaDados"></tbody>
+    </table>
+    <div id="mediaDuracao" class="media"></div>
+  </div>
+
+<script>
+function formatarData(dataHoraStr) {
+  const [data, hora] = dataHoraStr.split(', ');
+  const [dia, mes, ano] = data.split('/');
+  return { data: `${dia}/${mes}/${ano}`, hora, obj: new Date(`${ano}-${mes}-${dia}T${hora}`) };
+}
+
+let linhasExcel = [];
+
+function filtrarRegistros() {
+  const motoboy = document.getElementById("filtroMotoboy").value;
+  const inicio = document.getElementById("dataInicio").value;
+  const fim = document.getElementById("dataFim").value;
+
+  const dados = JSON.parse(localStorage.getItem("registros") || "[]");
+  const enviados = dados.filter(r => r.tipo === "enviando");
+  const recebidos = dados.filter(r => r.tipo === "recebendo");
+
+  const linhas = [];
+  linhasExcel = [];
+  let totalDuracao = 0;
+  let contDuracao = 0;
+
+  enviados.forEach(envio => {
+    const receb = recebidos.find(r => r.motoboy === envio.motoboy && r.locaisRecebidos?.includes(envio.local));
+    if (receb) {
+      const dataEnv = formatarData(envio.dataHora);
+      const dataRec = formatarData(receb.dataHora);
+      const dt = dataRec.obj - dataEnv.obj;
+      const duracao = Math.round(dt / 60000);
+      const duracaoStr = isNaN(duracao) ? "-" : `${duracao} min`;
+      if (!isNaN(duracao)) {
+        totalDuracao += duracao;
+        contDuracao++;
+      }
+      const dataFiltro = envio.dataHora.split(', ')[0].split('/').reverse().join('-');
+      const dentroPeriodo = (!inicio || dataFiltro >= inicio) && (!fim || dataFiltro <= fim);
+
+      if ((motoboy === "todos" || envio.motoboy === motoboy) && dentroPeriodo) {
+        linhas.push(`<tr>
+          <td>${envio.motoboy}</td>
+          <td>${dataEnv.data}</td>
+          <td>${dataEnv.hora}</td>
+          <td>${envio.temp}°C</td>
+          <td>${envio.local}</td>
+          <td>${envio.responsavel}</td>
+          <td>${dataRec.hora}</td>
+          <td>${receb.temp}°C</td>
+          <td>${receb.responsavel}</td>
+          <td>${receb.local}</td>
+          <td>${duracaoStr}</td>
+        </tr>`);
+
+        linhasExcel.push({
+          Motoboy: envio.motoboy,
+          Data: dataEnv.data,
+          "Hora Envio": dataEnv.hora,
+          "Temp Envio": `${envio.temp}°C`,
+          "Local Envio": envio.local,
+          "Resp. Envio": envio.responsavel,
+          "Hora Receb": dataRec.hora,
+          "Temp Receb": `${receb.temp}°C`,
+          "Resp. Receb": receb.responsavel,
+          "Local Receb": receb.local,
+          "Duração": duracaoStr
+        });
+      }
+    }
+  });
+
+  document.getElementById("tabelaDados").innerHTML = linhas.join('') || '<tr><td colspan="11">Nenhum dado encontrado</td></tr>';
+
+  const media = contDuracao > 0 ? `${Math.round(totalDuracao / contDuracao)} min` : "-";
+  document.getElementById("mediaDuracao").innerText = `Tempo médio entre envio e recebimento: ${media}`;
+}
+
+function carregarMotoboysFiltro() {
+  const select = document.getElementById("filtroMotoboy");
+  const motoboys = JSON.parse(localStorage.getItem("motoboys") || "[]");
+  select.innerHTML = '<option value="todos">Todos</option>';
+  motoboys.forEach(m => {
+    const opt = document.createElement("option");
+    opt.value = m.nome;
+    opt.textContent = m.nome;
+    select.appendChild(opt);
+  });
+}
+
+function exportarExcel() {
+  if (linhasExcel.length === 0) return alert("Nada para exportar");
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(linhasExcel);
+  XLSX.utils.book_append_sheet(wb, ws, "Registros");
+  XLSX.writeFile(wb, "registros-dna-center.xlsx");
+}
+
+carregarMotoboysFiltro();
+filtrarRegistros();
+</script>
+</body>
+</html>

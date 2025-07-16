@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Painel de Temperatura DNA Center</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+</head>
+<body>
+  <header class="header">
+    <img src="logo.png" class="logo" alt="Logo DNA Center" />
+    <h1>Painel de Temperatura DNA Center</h1>
+  </header>
+
+  <main>
+    <section class="login" id="loginSection">
+      <h2>Login do Administrador</h2>
+      <input type="text" id="user" placeholder="Usuário" />
+      <input type="password" id="pass" placeholder="Senha" />
+      <button onclick="login()">Entrar</button>
+    </section>
+
+    <section class="admin-panel hidden" id="adminPanel">
+      <h2>Cadastro de Motoboys</h2>
+      <input type="text" id="nomeMotoboy" placeholder="Nome do Motoboy" />
+      <input type="text" id="numeroTermometro" placeholder="Nº Termômetro" />
+      <button onclick="cadastrarMotoboy()">Cadastrar</button>
+
+      <div id="listaMotoboys"></div>
+
+      <h2>Registros de Temperatura</h2>
+      <label>Data Inicial: <input type="date" id="dataInicio"></label>
+      <label>Data Final: <input type="date" id="dataFim"></label>
+      <label>Motoboy:
+        <select id="filtroMotoboy">
+          <option value="todos">Todos</option>
+        </select>
+      </label>
+      <button onclick="exportarExcel()">Exportar Excel</button>
+      <button onclick="exportarPDF()">Exportar PDF</button>
+      <div id="registros"></div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
