@@ -1,0 +1,75 @@
+// form.js
+import { collection, addDoc, getDocs, query, where, Timestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { firebaseDB } from './firebase-config.js';
+
+const urlParams = new URLSearchParams(window.location.search);
+const motoboy = urlParams.get("id") || "(não identificado)";
+document.getElementById("motoboyInfo").textContent = "Motoboy: " + motoboy;
+document.getElementById("dataHora").value = new Date().toLocaleString();
+
+window.mostrarFormulario = async function () {
+  const tipo = document.getElementById("tipo").value;
+  document.getElementById("formEnvio").classList.add("hidden");
+  document.getElementById("formRecebimento").classList.add("hidden");
+  if (tipo === "enviando") document.getElementById("formEnvio").classList.remove("hidden");
+  if (tipo === "recebendo") {
+    document.getElementById("formRecebimento").classList.remove("hidden");
+    await gerarCheckboxLocais();
+  }
+  document.getElementById("dataHora").value = new Date().toLocaleString();
+};
+
+window.verificarTemperatura = function (temp, tipo) {
+  const alerta = tipo === 'receb' ? document.getElementById("alertaReceb") : document.getElementById("alertaEnvio");
+  if (parseFloat(temp) > 15) alerta.classList.remove("hidden");
+  else alerta.classList.add("hidden");
+};
+
+async function gerarCheckboxLocais() {
+  const q = query(collection(firebaseDB, "registros"), where("motoboy", "==", motoboy), where("tipo", "==", "enviando"));
+  const snap = await getDocs(q);
+  const locais = new Set();
+  snap.forEach(doc => locais.add(doc.data().local));
+
+  const container = document.getElementById("checkboxLocais");
+  container.innerHTML = "";
+
+  if (locais.size === 0) {
+    container.innerHTML = "Nenhum local enviado anteriormente.";
+    return;
+  }
+
+  locais.forEach(local => {
+    const id = "check_" + local.replace(/\s+/g, '_');
+    container.innerHTML += `<label><input type="checkbox" name="locaisRecebidos" value="${local}"> ${local}</label><br>`;
+  });
+}
+
+window.salvarRegistro = async function () {
+  const tipo = document.getElementById("tipo").value;
+  const dataHoraStr = document.getElementById("dataHora").value;
+  const dataHora = Timestamp.fromDate(new Date());
+
+  let registro = { motoboy, tipo, dataHoraStr, dataHora };
+
+  if (tipo === "enviando") {
+    registro.responsavel = document.getElementById("responsavelEnvio").value;
+    registro.temp = document.getElementById("tempEnvio").value + " °C";
+    registro.local = document.getElementById("unidadeSaida").value;
+  } else {
+    registro.responsavel = document.getElementById("responsavelRecebimento").value;
+    registro.temp = document.getElementById("tempReceb").value + " °C";
+    registro.local = document.getElementById("unidadeChegada").value;
+    const selecionados = Array.from(document.querySelectorAll("input[name='locaisRecebidos']:checked")).map(el => el.value);
+    registro.locaisRecebidos = selecionados.join(", ");
+  }
+
+  try {
+    await addDoc(collection(firebaseDB, "registros"), registro);
+    alert("Registro salvo com sucesso!");
+    location.reload();
+  } catch (err) {
+    console.error("Erro ao salvar registro:", err);
+    alert("Erro ao salvar. Verifique a conexão.");
+  }
+};

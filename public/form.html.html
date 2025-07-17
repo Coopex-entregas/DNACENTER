@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Ficha de Temperatura - DNA Center</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f8ff;
+      margin: 0;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #0033aa;
+      text-align: center;
+    }
+    label, select, input, button {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      font-size: 16px;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+    .btn-salvar {
+      background-color: #0033aa;
+      color: white;
+      font-weight: bold;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    .alerta {
+      color: red;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Ficha de Temperatura DNA Center</h2>
+    <p id="nomeMotoboy"></p>
+    <p id="termoMotoboy"></p>
+
+    <label for="tipo">Selecione:</label>
+    <select id="tipo" onchange="mostrarFormulario()">
+      <option value="">-- Escolher --</option>
+      <option value="enviando">Enviando</option>
+      <option value="recebendo">Recebendo</option>
+    </select>
+
+    <div id="formEnvio" class="hidden">
+      <label>Responsável pelo Envio:</label>
+      <input type="text" id="responsavelEnvio">
+      <label>Temperatura (°C):</label>
+      <input type="number" id="tempEnvio" onchange="verificarTemperatura(this.value)">
+      <div id="alertaEnvio" class="alerta hidden">⚠️ Temperatura acima do ideal. Verifique o gelo da caixa.</div>
+      <label>Unidade de Saída:</label>
+      <input type="text" id="unidadeSaida">
+    </div>
+
+    <div id="formRecebimento" class="hidden">
+      <label>Responsável pelo Recebimento:</label>
+      <input type="text" id="responsavelRecebimento">
+      <label>Temperatura (°C):</label>
+      <input type="number" id="tempReceb" onchange="verificarTemperatura(this.value, 'receb')">
+      <div id="alertaReceb" class="alerta hidden">⚠️ Temperatura acima do ideal. Verifique o gelo da caixa.</div>
+      <label>Unidade de Chegada:</label>
+      <input type="text" id="unidadeChegada">
+      <label>Locais de Envio Recebidos:</label>
+      <div id="checkboxLocais" class="checkbox-container"></div>
+    </div>
+
+    <label>Data e Hora:</label>
+    <input type="text" id="dataHora" readonly>
+
+    <button onclick="salvarRegistro()" class="btn-salvar">💾 Salvar Registro</button>
+  </div>
+
+  <script>
+    function mostrarFormulario() {
+      const tipo = document.getElementById('tipo').value;
+      document.getElementById('formEnvio').classList.add('hidden');
+      document.getElementById('formRecebimento').classList.add('hidden');
+      if (tipo === 'enviando') {
+        document.getElementById('formEnvio').classList.remove('hidden');
+      } else if (tipo === 'recebendo') {
+        document.getElementById('formRecebimento').classList.remove('hidden');
+      }
+    }
+
+    function verificarTemperatura(valor, tipo = 'envio') {
+      const alerta = tipo === 'envio' ? document.getElementById('alertaEnvio') : document.getElementById('alertaReceb');
+      if (valor > 15) {
+        alerta.classList.remove('hidden');
+      } else {
+        alerta.classList.add('hidden');
+      }
+    }
+
+    function salvarRegistro() {
+      alert('Registro salvo com sucesso!');
+    }
+
+    // Simular preenchimento automático
+    document.getElementById('dataHora').value = new Date().toLocaleString();
+    document.getElementById('nomeMotoboy').textContent = "Motoboy: Fulano";
+    document.getElementById('termoMotoboy').textContent = "Termômetro: 123456";
+  </script>
+</body>
+</html>
