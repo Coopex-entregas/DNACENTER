@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Painel Admin - Ficha de Temperatura</title>
   <script type="module" src="firebase-config.js"></script>
-  <script type="module" src="admin.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -122,8 +121,30 @@
           <th>Duração</th>
         </tr>
       </thead>
-      <tbody id="corpoTabela"></tbody>
+      <tbody id="tabelaRegistros"></tbody>
     </table>
   </div>
-</body>
-</html>
+
+  <script type="module">
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+    import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    import QRCode from "https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js";
+
+    const db = firebaseDB;
+    const auth = firebaseAuth;
+
+    const nomeInput = document.getElementById("nomeMotoboy");
+    const termoInput = document.getElementById("numeroTermometro");
+    const listaMotoboys = document.getElementById("listaMotoboys");
+    const filtroMotoboy = document.getElementById("filtroMotoboy");
+    const filtroInicio = document.getElementById("filtroInicio");
+    const filtroFim = document.getElementById("filtroFim");
+    const tabela = document.getElementById("tabelaRegistros");
+
+    onAuthStateChanged(auth, (user) => {
+      if (!user) window.location.href = "login.html";
+    });
+
+    document.getElementById("btnLogout").onclick = () => signOut(auth);
+
+    document.getElementBy
