@@ -77,7 +77,12 @@ function filtrarRegistros() {
   let contDuracao = 0;
 
   enviados.forEach(envio => {
-    const receb = recebidos.find(r => r.motoboy === envio.motoboy && r.locaisRecebidos?.includes(envio.local));
+    const receb = recebidos.find(r =>
+      r.motoboy === envio.motoboy &&
+      Array.isArray(r.locaisRecebidos) &&
+      r.locaisRecebidos.some(loc => loc.trim().toLowerCase() === envio.local.trim().toLowerCase())
+    );
+
     if (receb) {
       const dataEnv = formatarData(envio.dataHora);
       const dataRec = formatarData(receb.dataHora);
