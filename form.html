@@ -2,23 +2,76 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ficha de Temperatura DNA Center</title>
   <style>
-    body { font-family: Arial; background: #f4f8ff; padding: 20px; }
-    .container { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-    h2 { text-align: center; color: #0033aa; }
-    label { display: block; margin-top: 15px; font-weight: bold; }
-    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
+    body {
+      font-family: Arial;
+      background: #f4f8ff;
+      padding: 10px;
+      margin: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h2 {
+      text-align: center;
+      color: #0033aa;
+    }
+    label {
+      display: block;
+      margin-top: 15px;
+      font-weight: bold;
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      margin-top: 5px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
     .hidden { display: none; }
-    .alerta { color: red; font-weight: bold; margin-top: 10px; }
-    .checkbox-container { margin-top: 10px; }
+    .alerta {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .checkbox-container {
+      margin-top: 10px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 14px 20px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #fff;
+      background-color: #007bff;
+      border: none;
+      border-radius: 6px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      cursor: pointer;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    select {
+      background-color: #e6f0ff;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Ficha de Temperatura DNA Center</h2>
     <p id="nomeMotoboy"></p>
-    <p id="termoMotoboy"></p>
 
     <label for="tipo">Selecione:</label>
     <select id="tipo" onchange="mostrarFormulario()">
@@ -52,12 +105,15 @@
     <label>Data e Hora:</label>
     <input type="text" id="dataHora" readonly>
 
-    <button onclick="salvarRegistro()" style="margin-top: 20px; padding: 10px 20px;">Salvar</button>
+    <button onclick="salvarRegistro()">Salvar</button>
   </div>
 
   <script>
     const urlParams = new URLSearchParams(window.location.search);
-    const motoboy = urlParams.get("id") || "(motoboy não identificado)";
+    let motoboy = urlParams.get("id");
+    if (!motoboy) {
+      motoboy = prompt("Digite o nome do motoboy:") || "Motoboy não identificado";
+    }
     document.getElementById("nomeMotoboy").textContent = "Motoboy: " + motoboy;
 
     function mostrarFormulario() {
@@ -98,6 +154,7 @@
       const tipo = document.getElementById("tipo").value;
       const dataHora = document.getElementById("dataHora").value;
       let registro = { motoboy, tipo, dataHora };
+
       if (tipo === "enviando") {
         registro.responsavel = document.getElementById("responsavelEnvio").value;
         registro.temp = document.getElementById("tempEnvio").value;
@@ -107,8 +164,9 @@
         registro.temp = document.getElementById("tempReceb").value;
         registro.local = document.getElementById("unidadeChegada").value;
         const selecionados = Array.from(document.querySelectorAll("input[name='locaisRecebidos']:checked")).map(el => el.value);
-        registro.locaisRecebidos = selecionados.join(", ");
+        registro.locaisRecebidos = selecionados;
       }
+
       const dados = JSON.parse(localStorage.getItem("registros") || "[]");
       dados.push(registro);
       localStorage.setItem("registros", JSON.stringify(dados));
