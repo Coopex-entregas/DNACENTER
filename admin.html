@@ -50,6 +50,12 @@
       height: 100px;
     }
   </style>
+  <script>
+    if (localStorage.getItem("logado") !== "true") {
+      alert("Acesso negado. Faça login primeiro.");
+      window.location.href = "login.html";
+    }
+  </script>
 </head>
 <body>
   <header>
@@ -61,7 +67,7 @@
     <input type="text" id="nomeMotoboy" placeholder="Nome do motoboy">
     <input type="text" id="termoMotoboy" placeholder="Número do termômetro">
     <button onclick="cadastrarMotoboy()">Cadastrar</button>
-    
+
     <h2>Motoboys Cadastrados</h2>
     <div id="listaMotoboys"></div>
 
@@ -93,106 +99,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <script>
-    const motoboys = JSON.parse(localStorage.getItem("motoboys")) || [];
-    const registros = JSON.parse(localStorage.getItem("registros")) || [];
-
-    function cadastrarMotoboy() {
-      const nome = document.getElementById("nomeMotoboy").value.trim();
-      const termo = document.getElementById("termoMotoboy").value.trim();
-      if (!nome || !termo) return alert("Preencha todos os campos.");
-
-      const id = Date.now().toString();
-      motoboys.push({ id, nome, termo });
-      localStorage.setItem("motoboys", JSON.stringify(motoboys));
-      carregarMotoboys();
-    }
-
-    function carregarMotoboys() {
-      const div = document.getElementById("listaMotoboys");
-      const filtro = document.getElementById("filtroMotoboy");
-      div.innerHTML = "";
-      filtro.innerHTML = `<option value="">Todos</option>`;
-
-      motoboys.forEach(m => {
-        const qrcodeDiv = document.createElement("div");
-        qrcodeDiv.innerHTML = `
-          <p><strong>${m.nome}</strong> (T${m.termo})</p>
-          <canvas id="qr-${m.id}" class="qr"></canvas>
-          <hr/>
-        `;
-        div.appendChild(qrcodeDiv);
-        filtro.innerHTML += `<option value="${m.nome}">${m.nome}</option>`;
-        QRCode.toCanvas(document.getElementById(`qr-${m.id}`), `index.html?id=${m.id}`);
-      });
-    }
-
-    function carregarRegistros() {
-      filtrarRegistros();
-    }
-
-    function filtrarRegistros() {
-      const filtro = document.getElementById("filtroMotoboy").value;
-      const inicio = document.getElementById("dataInicio").value;
-      const fim = document.getElementById("dataFim").value;
-
-      const tabela = document.getElementById("tabelaRegistros");
-      tabela.innerHTML = "";
-
-      registros.forEach(r => {
-        if (filtro && r.motoboy !== filtro) return;
-        if (inicio && r.data < inicio) return;
-        if (fim && r.data > fim) return;
-
-        const linha = document.createElement("tr");
-        const duracao = calcularDuracao(r.horaEnvio, r.horaRecebimento);
-        const alerta = (parseFloat(r.tempEnvio) > 15 || parseFloat(r.tempRecebimento) > 15)
-          ? `<span class="alerta">Temperatura acima do ideal</span>` : "";
-
-        linha.innerHTML = `
-          <td>${r.motoboy}</td>
-          <td>${r.data}</td>
-          <td>${r.horaEnvio || "-"}</td>
-          <td>${r.tempEnvio || "-"}</td>
-          <td>${r.unidadeEnvio || "-"}</td>
-          <td>${r.respEnvio || "-"}</td>
-          <td>${r.horaRecebimento || "-"}</td>
-          <td>${r.tempRecebimento || "-"}</td>
-          <td>${r.unidadeRecebimento || "-"}</td>
-          <td>${r.respRecebimento || "-"}</td>
-          <td>${duracao}</td>
-          <td>${alerta}</td>
-        `;
-        tabela.appendChild(linha);
-      });
-    }
-
-    function calcularDuracao(h1, h2) {
-      if (!h1 || !h2) return "-";
-      const [h1h, h1m] = h1.split(":").map(Number);
-      const [h2h, h2m] = h2.split(":").map(Number);
-      return (h2h * 60 + h2m) - (h1h * 60 + h1m) + " min";
-    }
-
-    function exportarExcel() {
-      let csv = "Motoboy,Data,Hora Envio,Temp Envio,Unidade Envio,Resp Envio,Hora Recebimento,Temp Recebimento,Unidade Recebimento,Resp Recebimento,Duração,Alerta\n";
-      registros.forEach(r => {
-        const alerta = (parseFloat(r.tempEnvio) > 15 || parseFloat(r.tempRecebimento) > 15)
-          ? "Temperatura acima do ideal" : "";
-        const duracao = calcularDuracao(r.horaEnvio, r.horaRecebimento);
-        csv += `"${r.motoboy}","${r.data}","${r.horaEnvio}","${r.tempEnvio}","${r.unidadeEnvio}","${r.respEnvio}","${r.horaRecebimento}","${r.tempRecebimento}","${r.unidadeRecebimento}","${r.respRecebimento}","${duracao}","${alerta}"\n`;
-      });
-      const blob = new Blob([csv], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "registros_temperatura.csv";
-      a.click();
-    }
-
-    // Inicializar
-    carregarMotoboys();
-    carregarRegistros();
-  </script>
+  <script src="script.js"></script>
 </body>
 </html>
