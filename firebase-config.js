@@ -1,26 +1,34 @@
-<!-- firebase-config.js -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+// firebase-config.js
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-  const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
-    authDomain: "SEU_AUTH_DOMAIN",
-    projectId: "SEU_PROJECT_ID",
-    storageBucket: "SEU_BUCKET",
-    messagingSenderId: "SEU_SENDER_ID",
-    appId: "SEU_APP_ID"
-  };
+// 🔧 Substitua com os dados reais do seu projeto no Firebase Console
+const firebaseConfig = {
+  apiKey: "AIzaSyDxxxxxxxxxxxxxxxx", // sua chave real
+  authDomain: "nomedoprojeto.firebaseapp.com",
+  projectId: "nomedoprojeto",
+  storageBucket: "nomedoprojeto.appspot.com",
+  messagingSenderId: "1234567890",
+  appId: "1:1234567890:web:abcde123456"
+};
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const auth = getAuth(app);
+// Inicializa o Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-  window.firebaseApp = app;
-  window.firebaseDB = db;
-  window.firebaseAuth = auth;
-  window.firebaseCreateUser = createUserWithEmailAndPassword;
-  window.firebaseSignIn = signInWithEmailAndPassword;
-  window.firebaseOnAuthStateChanged = onAuthStateChanged;
-</script>
+// Exporta os módulos para os arquivos .js que usam
+export {
+  app,
+  db,
+  auth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  onAuthStateChanged
+};

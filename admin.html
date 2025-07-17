@@ -4,66 +4,10 @@
   <meta charset="UTF-8">
   <title>Painel Admin - Ficha de Temperatura</title>
   <script type="module" src="firebase-config.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f8ff; color: #333; }
-    h1, h2 { color: #0033aa; }
-    .logo { display: block; margin: 0 auto 20px; max-width: 150px; }
-    .admin-container { max-width: 1200px; margin: 40px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
-    input, select, button { width: 100%; margin-top: 10px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
-    button { background-color: #0033aa; color: white; font-weight: bold; border: none; cursor: pointer; margin-top: 10px; }
-    button:hover { background-color: #002288; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-    table th, table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-    table th { background-color: #0033aa; color: white; }
-    .motoboy-card { padding: 10px; border: 1px solid #ccc; margin: 5px 0; border-radius: 8px; background: #eef3ff; }
-    canvas { display: block; margin-top: 5px; }
-  </style>
-</head>
-<body>
-  <div class="admin-container">
-    <img src="logo.png" class="logo">
-    <h1>Painel de Temperatura DNA Center</h1>
-    <button id="btnLogout">Sair</button>
-
-    <h2>Cadastro de Motoboy</h2>
-    <input type="text" id="nomeMotoboy" placeholder="Nome do Motoboy">
-    <input type="text" id="numeroTermometro" placeholder="Nº do Termômetro">
-    <button id="btnCadastrarMotoboy">Cadastrar Motoboy</button>
-    <div id="listaMotoboys"></div>
-
-    <h2>Registros</h2>
-    <select id="filtroMotoboy"></select>
-    <input type="date" id="filtroInicio">
-    <input type="date" id="filtroFim">
-    <button id="btnFiltrar">Filtrar</button>
-    <button id="btnExportarExcel">Exportar Excel</button>
-
-    <table id="tabelaRegistros">
-      <thead>
-        <tr>
-          <th>Motoboy</th>
-          <th>Data</th>
-          <th>Hora Envio</th>
-          <th>Temp Envio (°C)</th>
-          <th>Local Envio</th>
-          <th>Responsável Envio</th>
-          <th>Hora Receb</th>
-          <th>Temp Receb (°C)</th>
-          <th>Responsável Receb</th>
-          <th>Local Receb</th>
-          <th>Duração</th>
-        </tr>
-      </thead>
-      <tbody id="corpoTabela"></tbody>
-    </table>
-  </div>
-
   <script type="module">
     import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import { firebaseDB, firebaseAuth } from './firebase-config.js';
 
     const db = firebaseDB;
     const auth = firebaseAuth;
@@ -74,7 +18,7 @@
     const filtroMotoboy = document.getElementById("filtroMotoboy");
     const filtroInicio = document.getElementById("filtroInicio");
     const filtroFim = document.getElementById("filtroFim");
-    const tabela = document.getElementById("tabelaRegistros").getElementsByTagName("tbody")[0];
+    const tabela = document.getElementById("corpoTabela");
 
     onAuthStateChanged(auth, (user) => {
       if (!user) window.location.href = "login.html";
@@ -94,7 +38,7 @@
     };
 
     document.getElementById("btnFiltrar").onclick = carregarRegistros;
-    document.getElementById("btnExportarExcel").onclick = exportarExcel;
+    document.getElementById("btnExportarExcel").onclick = () => alert("Exportação Excel será implementada com Firebase.");
 
     async function carregarMotoboys() {
       listaMotoboys.innerHTML = "";
@@ -103,8 +47,7 @@
       snap.forEach(doc => {
         const m = doc.data();
         const div = document.createElement("div");
-        div.className = "motoboy-card";
-        div.innerHTML = `${m.nome} (Termômetro ${m.termo})<br><canvas></canvas>`;
+        div.innerHTML = `<strong>${m.nome}</strong> (Termômetro ${m.termo})<br><canvas></canvas><hr>`;
         listaMotoboys.appendChild(div);
         QRCode.toCanvas(div.querySelector("canvas"), `${window.location.origin}/form.html?id=${encodeURIComponent(m.nome)}`);
 
@@ -169,15 +112,111 @@
       }
     }
 
-    function exportarExcel() {
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.table_to_sheet(document.getElementById("tabelaRegistros"));
-      XLSX.utils.book_append_sheet(wb, ws, "Registros");
-      XLSX.writeFile(wb, "registros_temperatura.xlsx");
-    }
-
     carregarMotoboys();
     carregarRegistros();
   </script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background: #f4f8ff;
+      color: #333;
+    }
+    h1, h2, h3 {
+      color: #0033aa;
+    }
+    .logo {
+      display: block;
+      margin: 0 auto 20px;
+      max-width: 150px;
+    }
+    .admin-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+    input, select, button {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      background-color: #0033aa;
+      color: white;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+      transition: background 0.3s ease;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #002288;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    table th, table td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+    table th {
+      background-color: #0033aa;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <img src="logo.png" class="logo">
+    <h1>Painel de Temperatura DNA Center</h1>
+    <button id="btnLogout">Sair</button>
+
+    <h2>Cadastro de Motoboy</h2>
+    <input type="text" id="nomeMotoboy" placeholder="Nome do Motoboy">
+    <input type="text" id="numeroTermometro" placeholder="Nº do Termômetro">
+    <button id="btnCadastrarMotoboy">Cadastrar Motoboy</button>
+
+    <div id="listaMotoboys"></div>
+
+    <h2>Registros</h2>
+    <select id="filtroMotoboy"></select>
+    <input type="date" id="filtroInicio">
+    <input type="date" id="filtroFim">
+    <button id="btnFiltrar">Filtrar</button>
+    <button id="btnExportarExcel">Exportar Excel</button>
+
+    <table id="tabelaRegistros">
+      <thead>
+        <tr>
+          <th>Motoboy</th>
+          <th>Data</th>
+          <th>Hora Envio</th>
+          <th>Temp Envio</th>
+          <th>Local Envio</th>
+          <th>Responsável Envio</th>
+          <th>Hora Receb</th>
+          <th>Temp Receb</th>
+          <th>Responsável Receb</th>
+          <th>Local Receb</th>
+          <th>Duração</th>
+        </tr>
+      </thead>
+      <tbody id="corpoTabela"></tbody>
+    </table>
+  </div>
 </body>
 </html>
