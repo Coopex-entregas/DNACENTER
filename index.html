@@ -2,47 +2,156 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Painel de Temperatura DNA Center</title>
-  <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ficha de Temperatura</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f4ff;
+      padding: 20px;
+      margin: 0;
+    }
+    h2 {
+      color: #0033a0;
+    }
+    label, select, input, button {
+      display: block;
+      margin: 10px 0;
+      font-size: 18px;
+      width: 100%;
+      max-width: 500px;
+    }
+    .alerta {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    .form-container {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px #ccc;
+      max-width: 600px;
+      margin: auto;
+    }
+    button {
+      background-color: #0033a0;
+      color: white;
+      border: none;
+      cursor: pointer;
+      padding: 10px;
+    }
+  </style>
 </head>
 <body>
-  <header class="header">
-    <img src="logo.png" class="logo" alt="Logo DNA Center" />
-    <h1>Painel de Temperatura DNA Center</h1>
-  </header>
+  <div class="form-container">
+    <h2>Ficha de Temperatura</h2>
+    <p><strong>Motoboy:</strong> <span id="motoboyNome"></span></p>
+    <p><strong>Termômetro:</strong> <span id="termoNumero"></span></p>
+    <p><strong>Mês:</strong> <span id="mesAtual"></span></p>
 
-  <main>
-    <section class="login" id="loginSection">
-      <h2>Login do Administrador</h2>
-      <input type="text" id="user" placeholder="Usuário" />
-      <input type="password" id="pass" placeholder="Senha" />
-      <button onclick="login()">Entrar</button>
-    </section>
+    <label for="tipo">Tipo de Registro:</label>
+    <select id="tipo" onchange="atualizarFormulario()">
+      <option value="">Selecione</option>
+      <option value="Enviando">Enviando</option>
+      <option value="Recebendo">Recebendo</option>
+    </select>
 
-    <section class="admin-panel hidden" id="adminPanel">
-      <h2>Cadastro de Motoboys</h2>
-      <input type="text" id="nomeMotoboy" placeholder="Nome do Motoboy" />
-      <input type="text" id="numeroTermometro" placeholder="Nº Termômetro" />
-      <button onclick="cadastrarMotoboy()">Cadastrar</button>
+    <div id="formEnvio" style="display:none;">
+      <label>Responsável pelo Envio:</label>
+      <input type="text" id="respEnvio" />
+      <label>Temperatura (°C):</label>
+      <input type="number" id="tempEnvio" step="0.1" onchange="verificarTemp('envio')" />
+      <label>Unidade de Saída:</label>
+      <input type="text" id="unidadeEnvio" />
+    </div>
 
-      <div id="listaMotoboys"></div>
+    <div id="formRecebimento" style="display:none;">
+      <label>Responsável pelo Recebimento:</label>
+      <input type="text" id="respRecebimento" />
+      <label>Temperatura (°C):</label>
+      <input type="number" id="tempRecebimento" step="0.1" onchange="verificarTemp('recebimento')" />
+      <label>Unidade de Chegada:</label>
+      <input type="text" id="unidadeRecebimento" />
+    </div>
 
-      <h2>Registros de Temperatura</h2>
-      <label>Data Inicial: <input type="date" id="dataInicio"></label>
-      <label>Data Final: <input type="date" id="dataFim"></label>
-      <label>Motoboy:
-        <select id="filtroMotoboy">
-          <option value="todos">Todos</option>
-        </select>
-      </label>
-      <button onclick="exportarExcel()">Exportar Excel</button>
-      <button onclick="exportarPDF()">Exportar PDF</button>
-      <div id="registros"></div>
-    </section>
-  </main>
+    <div id="alertaTemp" class="alerta"></div>
 
-  <script src="script.js"></script>
+    <button onclick="salvar()">Salvar</button>
+  </div>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get("id");
+
+    const motoboys = JSON.parse(localStorage.getItem("motoboys")) || [];
+    const registros = JSON.parse(localStorage.getItem("registros")) || [];
+
+    const motoboy = motoboys.find(m => m.id === id);
+    if (!motoboy) {
+      alert("Motoboy não encontrado.");
+    } else {
+      document.getElementById("motoboyNome").textContent = motoboy.nome;
+      document.getElementById("termoNumero").textContent = motoboy.termo;
+      const mes = new Date().toLocaleDateString('pt-BR', { month: 'long' }).toUpperCase();
+      document.getElementById("mesAtual").textContent = mes;
+    }
+
+    function atualizarFormulario() {
+      const tipo = document.getElementById("tipo").value;
+      document.getElementById("formEnvio").style.display = tipo === "Enviando" ? "block" : "none";
+      document.getElementById("formRecebimento").style.display = tipo === "Recebendo" ? "block" : "none";
+      document.getElementById("alertaTemp").innerHTML = "";
+    }
+
+    function verificarTemp(tipo) {
+      const temp = parseFloat(tipo === "envio"
+        ? document.getElementById("tempEnvio").value
+        : document.getElementById("tempRecebimento").value);
+      if (temp > 15) {
+        document.getElementById("alertaTemp").innerHTML = "⚠️ Temperatura acima do ideal. Verifique o gelo da caixa. Caso já tenha trocado, desconsidere esta mensagem.";
+      } else {
+        document.getElementById("alertaTemp").innerHTML = "";
+      }
+    }
+
+    function salvar() {
+      const tipo = document.getElementById("tipo").value;
+      const agora = new Date();
+      const data = agora.toISOString().split("T")[0];
+      const hora = agora.toTimeString().split(" ")[0].slice(0,5);
+
+      let registroExistente = registros.find(r => r.motoboy === motoboy.nome && !r.horaRecebimento);
+
+      if (tipo === "Enviando") {
+        const novo = {
+          motoboy: motoboy.nome,
+          data,
+          horaEnvio: hora,
+          tempEnvio: document.getElementById("tempEnvio").value,
+          unidadeEnvio: document.getElementById("unidadeEnvio").value,
+          respEnvio: document.getElementById("respEnvio").value,
+          horaRecebimento: null,
+          tempRecebimento: null,
+          unidadeRecebimento: null,
+          respRecebimento: null
+        };
+        registros.push(novo);
+      } else if (tipo === "Recebendo" && registroExistente) {
+        registroExistente.horaRecebimento = hora;
+        registroExistente.tempRecebimento = document.getElementById("tempRecebimento").value;
+        registroExistente.unidadeRecebimento = document.getElementById("unidadeRecebimento").value;
+        registroExistente.respRecebimento = document.getElementById("respRecebimento").value;
+      } else {
+        alert("Você precisa registrar um envio antes de registrar o recebimento.");
+        return;
+      }
+
+      localStorage.setItem("registros", JSON.stringify(registros));
+      alert("Registro salvo com sucesso!");
+      document.querySelector("form")?.reset();
+      location.reload();
+    }
+  </script>
 </body>
 </html>
