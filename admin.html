@@ -4,85 +4,21 @@
   <meta charset="UTF-8">
   <title>Painel Admin - Ficha de Temperatura</title>
   <script type="module" src="firebase-config.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      background: #f4f8ff;
-      color: #333;
-    }
-    h1, h2, h3 {
-      color: #0033aa;
-    }
-    .logo {
-      display: block;
-      margin: 0 auto 20px;
-      max-width: 150px;
-    }
-    .admin-container {
-      max-width: 1200px;
-      margin: 40px auto;
-      background: #fff;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.1);
-    }
-    input, select, textarea, button {
-      display: block;
-      width: 100%;
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-      box-sizing: border-box;
-    }
-    button {
-      background-color: #0033aa;
-      color: white;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      transition: background 0.3s ease;
-      margin-top: 10px;
-    }
-    button:hover {
-      background-color: #002288;
-    }
-    .alerta {
-      color: red;
-      font-weight: bold;
-      margin-top: 10px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-      font-size: 14px;
-    }
-    table th, table td {
-      border: 1px solid #ccc;
-      padding: 8px;
-      text-align: left;
-    }
-    table th {
-      background-color: #0033aa;
-      color: white;
-    }
-    @media (max-width: 768px) {
-      .admin-container {
-        margin: 10px;
-        padding: 15px;
-      }
-      input, select, textarea, button {
-        font-size: 14px;
-      }
-      h1, h2 {
-        font-size: 20px;
-      }
-    }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; background: #f4f8ff; color: #333; }
+    h1, h2 { color: #0033aa; }
+    .logo { display: block; margin: 0 auto 20px; max-width: 150px; }
+    .admin-container { max-width: 1200px; margin: 40px auto; background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 0 15px rgba(0,0,0,0.1); }
+    input, select, button { width: 100%; margin-top: 10px; padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 16px; }
+    button { background-color: #0033aa; color: white; font-weight: bold; border: none; cursor: pointer; margin-top: 10px; }
+    button:hover { background-color: #002288; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
+    table th, table td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    table th { background-color: #0033aa; color: white; }
+    .motoboy-card { padding: 10px; border: 1px solid #ccc; margin: 5px 0; border-radius: 8px; background: #eef3ff; }
+    canvas { display: block; margin-top: 5px; }
   </style>
 </head>
 <body>
@@ -95,7 +31,6 @@
     <input type="text" id="nomeMotoboy" placeholder="Nome do Motoboy">
     <input type="text" id="numeroTermometro" placeholder="Nº do Termômetro">
     <button id="btnCadastrarMotoboy">Cadastrar Motoboy</button>
-
     <div id="listaMotoboys"></div>
 
     <h2>Registros</h2>
@@ -121,14 +56,14 @@
           <th>Duração</th>
         </tr>
       </thead>
-      <tbody id="tabelaRegistros"></tbody>
+      <tbody id="corpoTabela"></tbody>
     </table>
   </div>
 
   <script type="module">
     import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
     import { getAuth, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-    import QRCode from "https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js";
+    import { firebaseDB, firebaseAuth } from './firebase-config.js';
 
     const db = firebaseDB;
     const auth = firebaseAuth;
@@ -139,7 +74,7 @@
     const filtroMotoboy = document.getElementById("filtroMotoboy");
     const filtroInicio = document.getElementById("filtroInicio");
     const filtroFim = document.getElementById("filtroFim");
-    const tabela = document.getElementById("tabelaRegistros");
+    const tabela = document.getElementById("tabelaRegistros").getElementsByTagName("tbody")[0];
 
     onAuthStateChanged(auth, (user) => {
       if (!user) window.location.href = "login.html";
@@ -147,4 +82,102 @@
 
     document.getElementById("btnLogout").onclick = () => signOut(auth);
 
-    document.getElementBy
+    document.getElementById("btnCadastrarMotoboy").onclick = async () => {
+      const nome = nomeInput.value.trim();
+      const termo = termoInput.value.trim();
+      if (!nome || !termo) return alert("Preencha todos os campos");
+
+      await addDoc(collection(db, "motoboys"), { nome, termo });
+      nomeInput.value = "";
+      termoInput.value = "";
+      carregarMotoboys();
+    };
+
+    document.getElementById("btnFiltrar").onclick = carregarRegistros;
+    document.getElementById("btnExportarExcel").onclick = exportarExcel;
+
+    async function carregarMotoboys() {
+      listaMotoboys.innerHTML = "";
+      filtroMotoboy.innerHTML = '<option value="todos">Todos</option>';
+      const snap = await getDocs(collection(db, "motoboys"));
+      snap.forEach(doc => {
+        const m = doc.data();
+        const div = document.createElement("div");
+        div.className = "motoboy-card";
+        div.innerHTML = `${m.nome} (Termômetro ${m.termo})<br><canvas></canvas>`;
+        listaMotoboys.appendChild(div);
+        QRCode.toCanvas(div.querySelector("canvas"), `${window.location.origin}/form.html?id=${encodeURIComponent(m.nome)}`);
+
+        const opt = document.createElement("option");
+        opt.value = m.nome;
+        opt.textContent = m.nome;
+        filtroMotoboy.appendChild(opt);
+      });
+    }
+
+    async function carregarRegistros() {
+      tabela.innerHTML = "";
+      const snap = await getDocs(collection(db, "registros"));
+      const dados = [];
+      snap.forEach(doc => dados.push(doc.data()));
+
+      const inicio = filtroInicio.value;
+      const fim = filtroFim.value;
+      const filtroNome = filtroMotoboy.value;
+
+      const filtrados = dados.filter(d => {
+        if (filtroNome !== "todos" && d.motoboy !== filtroNome) return false;
+        if (inicio && new Date(d.dataHora) < new Date(inicio)) return false;
+        if (fim && new Date(d.dataHora) > new Date(fim + "T23:59:59")) return false;
+        return true;
+      });
+
+      const agrupados = {};
+      filtrados.forEach(d => {
+        if (!agrupados[d.motoboy]) agrupados[d.motoboy] = [];
+        agrupados[d.motoboy].push(d);
+      });
+
+      for (const nome in agrupados) {
+        const envios = agrupados[nome].filter(r => r.tipo === "enviando");
+        const receb = agrupados[nome].filter(r => r.tipo === "recebendo");
+
+        receb.forEach(rec => {
+          rec.locaisRecebidos?.split(", ").forEach(loc => {
+            const envio = envios.find(e => e.local === loc && !e.usado);
+            if (!envio) return;
+            envio.usado = true;
+
+            const linha = tabela.insertRow();
+            linha.insertCell().textContent = nome;
+            linha.insertCell().textContent = new Date(envio.dataHora).toLocaleDateString();
+            linha.insertCell().textContent = new Date(envio.dataHora).toLocaleTimeString();
+            linha.insertCell().textContent = envio.temp + " °C";
+            linha.insertCell().textContent = envio.local;
+            linha.insertCell().textContent = envio.responsavel;
+            linha.insertCell().textContent = new Date(rec.dataHora).toLocaleTimeString();
+            linha.insertCell().textContent = rec.temp + " °C";
+            linha.insertCell().textContent = rec.responsavel;
+            linha.insertCell().textContent = rec.local;
+
+            const t1 = new Date(envio.dataHora);
+            const t2 = new Date(rec.dataHora);
+            const duracao = Math.round((t2 - t1) / 60000);
+            linha.insertCell().textContent = duracao + " min";
+          });
+        });
+      }
+    }
+
+    function exportarExcel() {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.table_to_sheet(document.getElementById("tabelaRegistros"));
+      XLSX.utils.book_append_sheet(wb, ws, "Registros");
+      XLSX.writeFile(wb, "registros_temperatura.xlsx");
+    }
+
+    carregarMotoboys();
+    carregarRegistros();
+  </script>
+</body>
+</html>
