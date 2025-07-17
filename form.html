@@ -2,69 +2,50 @@
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ficha de Temperatura DNA Center</title>
+  <title>Ficha de Temperatura - DNA Center</title>
   <style>
     body {
-      font-family: Arial;
+      font-family: Arial, sans-serif;
       background: #f4f8ff;
-      padding: 10px;
       margin: 0;
+      padding: 20px;
     }
     .container {
       max-width: 600px;
       margin: auto;
       background: #fff;
       padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
     }
     h2 {
-      text-align: center;
       color: #0033aa;
+      text-align: center;
     }
-    label {
+    label, select, input, button {
       display: block;
-      margin-top: 15px;
-      font-weight: bold;
-    }
-    input, select, textarea {
       width: 100%;
-      padding: 12px;
-      margin-top: 5px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
+      margin-top: 10px;
       font-size: 16px;
+      padding: 10px;
       box-sizing: border-box;
     }
-    .hidden { display: none; }
+    .btn-salvar {
+      background-color: #0033aa;
+      color: white;
+      font-weight: bold;
+      border: none;
+      margin-top: 20px;
+      cursor: pointer;
+      border-radius: 5px;
+    }
     .alerta {
       color: red;
       font-weight: bold;
-      margin-top: 10px;
+      margin-top: 5px;
     }
-    .checkbox-container {
-      margin-top: 10px;
-    }
-    button {
-      margin-top: 20px;
-      padding: 14px 20px;
-      font-size: 16px;
-      font-weight: bold;
-      color: #fff;
-      background-color: #007bff;
-      border: none;
-      border-radius: 6px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-      cursor: pointer;
-      width: 100%;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    select {
-      background-color: #e6f0ff;
-      font-weight: bold;
+    .hidden {
+      display: none;
     }
   </style>
 </head>
@@ -72,6 +53,7 @@
   <div class="container">
     <h2>Ficha de Temperatura DNA Center</h2>
     <p id="nomeMotoboy"></p>
+    <p id="termoMotoboy"></p>
 
     <label for="tipo">Selecione:</label>
     <select id="tipo" onchange="mostrarFormulario()">
@@ -85,7 +67,7 @@
       <input type="text" id="responsavelEnvio">
       <label>Temperatura (°C):</label>
       <input type="number" id="tempEnvio" onchange="verificarTemperatura(this.value)">
-      <div id="alertaEnvio" class="alerta hidden">Temperatura acima do ideal. Verifique o gelo da caixa. Caso já tenha trocado, desconsidere esta mensagem.</div>
+      <div id="alertaEnvio" class="alerta hidden">⚠️ Temperatura acima do ideal. Verifique o gelo da caixa.</div>
       <label>Unidade de Saída:</label>
       <input type="text" id="unidadeSaida">
     </div>
@@ -95,7 +77,7 @@
       <input type="text" id="responsavelRecebimento">
       <label>Temperatura (°C):</label>
       <input type="number" id="tempReceb" onchange="verificarTemperatura(this.value, 'receb')">
-      <div id="alertaReceb" class="alerta hidden">Temperatura acima do ideal. Verifique o gelo da caixa. Caso já tenha trocado, desconsidere esta mensagem.</div>
+      <div id="alertaReceb" class="alerta hidden">⚠️ Temperatura acima do ideal. Verifique o gelo da caixa.</div>
       <label>Unidade de Chegada:</label>
       <input type="text" id="unidadeChegada">
       <label>Locais de Envio Recebidos:</label>
@@ -105,74 +87,38 @@
     <label>Data e Hora:</label>
     <input type="text" id="dataHora" readonly>
 
-    <button onclick="salvarRegistro()">Salvar</button>
+    <button onclick="salvarRegistro()" class="btn-salvar">💾 Salvar Registro</button>
   </div>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    let motoboy = urlParams.get("id");
-    if (!motoboy) {
-      motoboy = prompt("Digite o nome do motoboy:") || "Motoboy não identificado";
-    }
-    document.getElementById("nomeMotoboy").textContent = "Motoboy: " + motoboy;
-
     function mostrarFormulario() {
-      const tipo = document.getElementById("tipo").value;
-      document.getElementById("formEnvio").classList.add("hidden");
-      document.getElementById("formRecebimento").classList.add("hidden");
-      if (tipo === "enviando") document.getElementById("formEnvio").classList.remove("hidden");
-      if (tipo === "recebendo") {
-        document.getElementById("formRecebimento").classList.remove("hidden");
-        gerarCheckboxLocais();
+      const tipo = document.getElementById('tipo').value;
+      document.getElementById('formEnvio').classList.add('hidden');
+      document.getElementById('formRecebimento').classList.add('hidden');
+      if (tipo === 'enviando') {
+        document.getElementById('formEnvio').classList.remove('hidden');
+      } else if (tipo === 'recebendo') {
+        document.getElementById('formRecebimento').classList.remove('hidden');
       }
-      document.getElementById("dataHora").value = new Date().toLocaleString();
     }
 
-    function verificarTemperatura(temp, tipo) {
-      const alerta = tipo === 'receb' ? document.getElementById("alertaReceb") : document.getElementById("alertaEnvio");
-      if (parseFloat(temp) > 15) alerta.classList.remove("hidden");
-      else alerta.classList.add("hidden");
-    }
-
-    function gerarCheckboxLocais() {
-      const dados = JSON.parse(localStorage.getItem("registros") || "[]");
-      const locaisRecentes = dados.filter(d => d.motoboy === motoboy && d.tipo === 'enviando').map(d => d.local);
-      const unicos = [...new Set(locaisRecentes)];
-      const container = document.getElementById("checkboxLocais");
-      container.innerHTML = "";
-      if (unicos.length === 0) {
-        container.innerHTML = "Nenhum local registrado anteriormente.";
-        return;
+    function verificarTemperatura(valor, tipo = 'envio') {
+      const alerta = tipo === 'envio' ? document.getElementById('alertaEnvio') : document.getElementById('alertaReceb');
+      if (valor > 15) {
+        alerta.classList.remove('hidden');
+      } else {
+        alerta.classList.add('hidden');
       }
-      unicos.forEach(local => {
-        const id = "check_" + local.replace(/\s+/g, '_');
-        container.innerHTML += `<label><input type="checkbox" name="locaisRecebidos" value="${local}"> ${local}</label><br>`;
-      });
     }
 
     function salvarRegistro() {
-      const tipo = document.getElementById("tipo").value;
-      const dataHora = document.getElementById("dataHora").value;
-      let registro = { motoboy, tipo, dataHora };
-
-      if (tipo === "enviando") {
-        registro.responsavel = document.getElementById("responsavelEnvio").value;
-        registro.temp = document.getElementById("tempEnvio").value;
-        registro.local = document.getElementById("unidadeSaida").value;
-      } else {
-        registro.responsavel = document.getElementById("responsavelRecebimento").value;
-        registro.temp = document.getElementById("tempReceb").value;
-        registro.local = document.getElementById("unidadeChegada").value;
-        const selecionados = Array.from(document.querySelectorAll("input[name='locaisRecebidos']:checked")).map(el => el.value);
-        registro.locaisRecebidos = selecionados;
-      }
-
-      const dados = JSON.parse(localStorage.getItem("registros") || "[]");
-      dados.push(registro);
-      localStorage.setItem("registros", JSON.stringify(dados));
-      alert("Registro salvo com sucesso!");
-      location.reload();
+      alert('Registro salvo com sucesso!');
     }
+
+    // Simular preenchimento automático
+    document.getElementById('dataHora').value = new Date().toLocaleString();
+    document.getElementById('nomeMotoboy').textContent = "Motoboy: Fulano";
+    document.getElementById('termoMotoboy').textContent = "Termômetro: 123456";
   </script>
 </body>
 </html>
