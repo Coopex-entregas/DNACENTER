@@ -87,6 +87,14 @@
   </style>
 </head>
 <body>
+  <script>
+    // Impede acesso sem login
+    if (localStorage.getItem("logado") !== "true") {
+      alert("Acesso não autorizado. Faça login primeiro.");
+      window.location.href = "index.html";
+    }
+  </script>
+
   <div class="admin-container">
     <img src="logo.png" class="logo">
     <h1>Painel de Temperatura DNA Center</h1>
@@ -119,11 +127,4 @@
           <th>Temp Receb (°C)</th>
           <th>Responsável Receb</th>
           <th>Local Receb</th>
-          <th>Duração</th>
-        </tr>
-      </thead>
-      <tbody id="corpoTabela"></tbody>
-    </table>
-  </div>
-</body>
-</html>
+          <th>D

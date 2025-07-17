@@ -3,8 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Login - Painel de Temperatura DNA Center</title>
-  <script type="module" src="firebase-config.js"></script>
-  <script type="module" src="login.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,17 +11,14 @@
       background: #f4f8ff;
       color: #333;
     }
-
-    h1, h2, h3 {
+    h1, h2 {
       color: #0033aa;
     }
-
     .logo {
       display: block;
       margin: 0 auto 20px;
       max-width: 150px;
     }
-
     .login-container {
       max-width: 400px;
       margin: 100px auto;
@@ -33,7 +28,6 @@
       box-shadow: 0 0 15px rgba(0,0,0,0.1);
       text-align: center;
     }
-
     input, button {
       display: block;
       width: 100%;
@@ -44,7 +38,6 @@
       font-size: 16px;
       box-sizing: border-box;
     }
-
     button {
       background-color: #0033aa;
       color: white;
@@ -54,24 +47,8 @@
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       transition: background 0.3s ease;
     }
-
     button:hover {
       background-color: #002288;
-    }
-
-    @media (max-width: 768px) {
-      .login-container {
-        margin: 30px 10px;
-        padding: 20px;
-      }
-
-      input, button {
-        font-size: 14px;
-      }
-
-      h2 {
-        font-size: 20px;
-      }
     }
   </style>
 </head>
@@ -79,9 +56,22 @@
   <div class="login-container">
     <img src="logo.png" alt="Logo DNA Center" class="logo">
     <h2>Login do Administrador</h2>
-    <input type="email" id="email" placeholder="Email">
+    <input type="text" id="usuario" placeholder="Usuário">
     <input type="password" id="senha" placeholder="Senha">
-    <button id="btnLogin">Entrar</button>
+    <button onclick="login()">Entrar</button>
   </div>
+
+  <script>
+    function login() {
+      const usuario = document.getElementById('usuario').value.trim();
+      const senha = document.getElementById('senha').value.trim();
+
+      if (usuario === 'dnacenter' && senha === '84253700') {
+        window.location.href = "admin.html"; // Redireciona para o painel
+      } else {
+        alert("Usuário ou senha incorretos!");
+      }
+    }
+  </script>
 </body>
 </html>
